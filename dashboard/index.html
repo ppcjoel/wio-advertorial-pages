@@ -943,6 +943,25 @@ function client() {
   return CLIENT;
 }
 
+function formatTimestamp(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return ts;
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  const day = d.getDate();
+  const year = d.getFullYear();
+  // If it's just a date (no time component), show date only
+  if (typeof ts === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ts)) {
+    return `${month} ${day}, ${year}`;
+  }
+  const time = d.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return `${month} ${day}, ${year} ${time}`;
+}
+
+function nowISO() {
+  return new Date().toISOString();
+}
+
 // Prompt for PAT when a write operation is needed
 function ensureToken() {
   return new Promise((resolve) => {
@@ -1155,7 +1174,7 @@ function renderDashboard(app) {
                   </div>
                   <div class="test-card-meta">
                     <span class="mono">${t.name}</span>
-                    <span>Created ${t.created}</span>
+                    <span>Created ${formatTimestamp(t.created)}</span>
                   </div>
                 </div>
               </div>
@@ -1221,7 +1240,7 @@ function renderDetail(app) {
       <div class="detail-header">
         <div>
           <div class="detail-title">${t.display_name}</div>
-          <div class="detail-meta"><span class="mono">${t.name}</span> &middot; Created ${t.created}</div>
+          <div class="detail-meta"><span class="mono">${t.name}</span> &middot; Created ${formatTimestamp(t.created)}</div>
         </div>
         <div class="detail-actions">
           <select class="status-select ${t.status}" id="status-select">
@@ -1241,6 +1260,7 @@ function renderDetail(app) {
               <th style="width:70px;">Traffic</th>
               <th>Page</th>
               <th>test_id</th>
+              <th>Added</th>
               <th>Live URL</th>
               <th style="width:180px;">Copy Link</th>
             </tr>
@@ -1254,6 +1274,7 @@ function renderDetail(app) {
                   <td><strong>${v.weight || '—'}%</strong></td>
                   <td class="mono">${v.page}</td>
                   <td><span class="mono">${v.test_id}</span></td>
+                  <td style="font-size:11px; color:var(--text-secondary); white-space:nowrap;">${formatTimestamp(v.added)}</td>
                   <td class="url-cell" title="${url}">${url}</td>
                   <td>
                     <div class="copy-btn-group">
@@ -1267,6 +1288,10 @@ function renderDetail(app) {
             }).join('')}
           </tbody>
         </table>
+      </div>
+
+      <div style="margin-bottom:24px;">
+        <button class="btn btn-secondary btn-sm" id="btn-add-variant">+ Add Variant</button>
       </div>
 
       <div class="utm-ref">
@@ -1312,6 +1337,16 @@ function renderDetail(app) {
   document.querySelectorAll('.copy-outbrain, .copy-full-outbrain').forEach(btn => {
     btn.onclick = (e) => { e.stopPropagation(); copyText(UTM.outbrain(btn.dataset.url)); };
   });
+
+  // Add variant
+  $('#btn-add-variant').onclick = async () => {
+    const hasToken = await ensureToken();
+    if (!hasToken) return;
+    if (State.pages.length === 0) {
+      try { State.pages = await GitHub.listPages(); } catch {}
+    }
+    openAddVariantModal(t);
+  };
 
   // Status change
   $('#status-select').onchange = async (e) => {
@@ -1564,7 +1599,8 @@ function openNewTestModal() {
         id: variantLetter(i),
         page,
         test_id: `${name}_${variantLetter(i)}`,
-        weight: parseInt(weights[i].value)
+        weight: parseInt(weights[i].value),
+        added: nowISO()
       });
     }
 
@@ -1578,7 +1614,7 @@ function openNewTestModal() {
       display_name: displayName,
       client: CLIENT.key,
       status: 'active',
-      created: new Date().toISOString().split('T')[0],
+      created: nowISO(),
       variants
     };
 
@@ -1602,6 +1638,106 @@ function openNewTestModal() {
 
   // Focus name input
   setTimeout(() => modal.querySelector('#new-test-name')?.focus(), 100);
+}
+
+// ── Add Variant Modal ──
+function openAddVariantModal(test) {
+  const modal = $('#modal-root');
+  const existingPages = new Set(test.variants.map(v => v.page));
+  const nextLetter = variantLetter(test.variants.length);
+
+  modal.innerHTML = `
+    <div class="modal-overlay open">
+      <div class="modal">
+        <h2>Add Variant to "${test.display_name}"</h2>
+        <p style="font-size:13px; color:var(--text-secondary); margin-bottom:16px;">
+          This will be variant <strong>${nextLetter.toUpperCase()}</strong> with test_id <span class="mono">${test.name}_${nextLetter}</span>.
+          You'll need to redistribute traffic weights after adding.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label">Page</label>
+          <select class="form-select" id="add-variant-page">
+            <option value="">Select a page...</option>
+            ${State.pages.filter(p => !existingPages.has(p)).map(p => `<option value="${p}">${p}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Traffic Weight (%)</label>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="number" class="form-input" id="add-variant-weight" min="1" max="99" value="0" style="width:80px; text-align:center; font-family:var(--mono);">
+            <span style="font-size:12px; color:var(--text-secondary);">%</span>
+          </div>
+          <div class="form-hint">Current total: ${test.variants.reduce((s, v) => s + (v.weight || 0), 0)}%. Adjust existing weights after adding so all variants total 100%.</div>
+        </div>
+
+        <div id="add-variant-error" style="color:#991B1B; font-size:13px; margin-top:12px; display:none;"></div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="modal-cancel">Cancel</button>
+          <button class="btn btn-primary" id="modal-add">Add Variant</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  modal.querySelector('#modal-cancel').onclick = () => closeModal();
+  modal.querySelector('.modal-overlay').onclick = (e) => {
+    if (e.target === e.currentTarget) closeModal();
+  };
+
+  modal.querySelector('#modal-add').onclick = async () => {
+    const page = modal.querySelector('#add-variant-page').value;
+    const weight = parseInt(modal.querySelector('#add-variant-weight').value) || 0;
+    const errEl = modal.querySelector('#add-variant-error');
+
+    if (!page) { errEl.textContent = 'Select a page.'; errEl.style.display = 'block'; return; }
+    if (weight < 0 || weight > 99) { errEl.textContent = 'Weight must be between 0 and 99.'; errEl.style.display = 'block'; return; }
+
+    errEl.style.display = 'none';
+    const addBtn = modal.querySelector('#modal-add');
+    addBtn.textContent = 'Adding...';
+    addBtn.disabled = true;
+
+    // Get sha if needed
+    if (!test._sha) {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GitHub.repo}/contents/tests/${test.name}.json`, { headers: GitHub.headers() });
+        if (res.ok) test._sha = (await res.json()).sha;
+      } catch {}
+    }
+
+    const newVariant = {
+      id: nextLetter,
+      page,
+      test_id: `${test.name}_${nextLetter}`,
+      weight,
+      added: nowISO()
+    };
+
+    test.variants.push(newVariant);
+
+    try {
+      const cleanTest = { ...test };
+      const sha = cleanTest._sha;
+      delete cleanTest._sha;
+      const newSha = await GitHub.updateTest(cleanTest, sha);
+      test._sha = newSha;
+      closeModal();
+      toast(`Variant ${nextLetter.toUpperCase()} added!`);
+      State.currentTest = test;
+      render();
+    } catch (err) {
+      test.variants.pop();
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+      addBtn.textContent = 'Add Variant';
+      addBtn.disabled = false;
+    }
+  };
+
+  setTimeout(() => modal.querySelector('#add-variant-page')?.focus(), 100);
 }
 
 function closeModal() {
