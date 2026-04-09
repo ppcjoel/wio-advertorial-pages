@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Redirecting...</title>
+<style>
+body { margin: 0; background: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: -apple-system, sans-serif; color: #999; }
+.spinner { width: 24px; height: 24px; border: 3px solid #eee; border-top-color: #999; border-radius: 50%; animation: spin .6s linear infinite; margin-right: 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="spinner"></div> Loading...
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var testName = params.get('t');
+  if (!testName) return;
+
+  // Check for sticky cookie
+  var ck = 'ts_' + testName;
+  var m = document.cookie.match(new RegExp('(?:^|; )' + ck + '=([^;]+)'));
+
+  var x = new XMLHttpRequest();
+  x.open('GET', '/tests/' + testName + '.json', true);
+  x.onload = function () {
+    if (x.status !== 200) return;
+    try {
+      var test = JSON.parse(x.responseText);
+      var variants = test.variants;
+      if (!variants || !variants.length) return;
+
+      // If sticky cookie exists, redirect to that variant
+      if (m && m[1]) {
+        for (var i = 0; i < variants.length; i++) {
+          if (variants[i].id === m[1]) {
+            redirect(variants[i]);
+            return;
+          }
+        }
+      }
+
+      // Roll dice against weights
+      var total = 0;
+      for (var i = 0; i < variants.length; i++) total += (variants[i].weight || 0);
+      if (total <= 0) { redirect(variants[0]); return; }
+
+      var roll = Math.random() * total;
+      var cumulative = 0;
+      var chosen = variants[0];
+      for (var i = 0; i < variants.length; i++) {
+        cumulative += (variants[i].weight || 0);
+        if (roll < cumulative) { chosen = variants[i]; break; }
+      }
+
+      // Set sticky cookie (24h)
+      var exp = new Date(Date.now() + 86400000).toUTCString();
+      document.cookie = ck + '=' + chosen.id + '; path=/; expires=' + exp;
+
+      redirect(chosen);
+    } catch (e) {}
+  };
+  x.send();
+
+  function redirect(variant) {
+    // Build target URL preserving all query params except 't'
+    var base = '/' + variant.page;
+    params.delete('t');
+    var qs = params.toString();
+    if (qs) base += '?' + qs;
+    if (window.location.hash) base += window.location.hash;
+    window.location.replace(base);
+  }
+})();
+</script>
+</body>
+</html>

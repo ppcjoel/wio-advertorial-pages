@@ -1283,6 +1283,12 @@ function renderDetail(app) {
         </div>
       </div>
 
+      <div style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px; margin-bottom:20px; display:flex; align-items:center; gap:12px;">
+        <span style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); white-space:nowrap;">Split URL</span>
+        <code id="split-url" style="flex:1; font-size:12px; color:var(--text); word-break:break-all;">https://${c.domain}/split/?t=${t.name}</code>
+        <button class="btn btn-primary btn-sm" id="copy-split-url">Copy</button>
+      </div>
+
       <div class="variant-table">
         <table>
           <thead>
@@ -1329,30 +1335,24 @@ function renderDetail(app) {
       </div>
 
       <div class="utm-ref">
-        <h4>UTM Reference</h4>
+        <h4>Ad Platform URLs</h4>
         <p style="font-size:12px; color:var(--text-secondary); margin-bottom:16px;">
-          These URLs include platform macros that auto-populate in the ad platform. Paste them into the ad item's destination URL field.
-          The test_id is inside the page itself, not in these UTMs.
+          Use the split URL as your ad destination. It auto-routes visitors to variants by weight. Platform macros auto-populate in the ad platform.
         </p>
-        ${t.variants.map(v => {
-          const url = UTM.baseUrl(c.domain, v.page);
-          return `
-            <div class="utm-block">
-              <div class="utm-label">Variant ${v.id.toUpperCase()} (${v.weight || '—'}%) &mdash; Taboola</div>
-              <div class="utm-value">
-                ${UTM.taboola(url)}
-                <button class="btn btn-secondary btn-sm copy-float copy-full-taboola" data-url="${url}">Copy</button>
-              </div>
-            </div>
-            <div class="utm-block">
-              <div class="utm-label">Variant ${v.id.toUpperCase()} (${v.weight || '—'}%) &mdash; Outbrain</div>
-              <div class="utm-value">
-                ${UTM.outbrain(url)}
-                <button class="btn btn-secondary btn-sm copy-float copy-full-outbrain" data-url="${url}">Copy</button>
-              </div>
-            </div>
-          `;
-        }).join('')}
+        <div class="utm-block">
+          <div class="utm-label">Taboola</div>
+          <div class="utm-value">
+            ${UTM.taboola(`https://${c.domain}/split/?t=${t.name}`)}
+            <button class="btn btn-secondary btn-sm copy-float" id="copy-utm-taboola">Copy</button>
+          </div>
+        </div>
+        <div class="utm-block">
+          <div class="utm-label">Outbrain</div>
+          <div class="utm-value">
+            ${UTM.outbrain(`https://${c.domain}/split/?t=${t.name}`)}
+            <button class="btn btn-secondary btn-sm copy-float" id="copy-utm-outbrain">Copy</button>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -1361,16 +1361,22 @@ function renderDetail(app) {
   $('#btn-back').onclick = () => { State.view = 'dashboard'; render(); };
   if ($('#btn-settings')) $('#btn-settings').onclick = () => { State.view = 'settings'; render(); };
 
+  // Split URL copy
+  $('#copy-split-url').onclick = () => copyText($('#split-url').textContent);
+
   // Copy buttons
   document.querySelectorAll('.copy-url').forEach(btn => {
     btn.onclick = (e) => { e.stopPropagation(); copyText(btn.dataset.url); };
   });
-  document.querySelectorAll('.copy-taboola, .copy-full-taboola').forEach(btn => {
+  document.querySelectorAll('.copy-taboola').forEach(btn => {
     btn.onclick = (e) => { e.stopPropagation(); copyText(UTM.taboola(btn.dataset.url)); };
   });
-  document.querySelectorAll('.copy-outbrain, .copy-full-outbrain').forEach(btn => {
+  document.querySelectorAll('.copy-outbrain').forEach(btn => {
     btn.onclick = (e) => { e.stopPropagation(); copyText(UTM.outbrain(btn.dataset.url)); };
   });
+  const splitBase = `https://${c.domain}/split/?t=${t.name}`;
+  if ($('#copy-utm-taboola')) $('#copy-utm-taboola').onclick = () => copyText(UTM.taboola(splitBase));
+  if ($('#copy-utm-outbrain')) $('#copy-utm-outbrain').onclick = () => copyText(UTM.outbrain(splitBase));
 
   // Inline weight editing
   const wtInputs = document.querySelectorAll('.wt-input');
