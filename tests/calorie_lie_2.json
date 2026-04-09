@@ -1,0 +1,23 @@
+{
+  "name": "calorie_lie_2",
+  "display_name": "Calorie Lie Advertorial",
+  "client": "wio",
+  "status": "active",
+  "created": "2026-04-09T15:07:54.415Z",
+  "variants": [
+    {
+      "id": "a",
+      "page": "keto-muffins-doctor-v1.html",
+      "test_id": "calorie_lie_2_a",
+      "weight": 10,
+      "added": "2026-04-09T15:07:54.414Z"
+    },
+    {
+      "id": "b",
+      "page": "keto-bread-transform-v1.html",
+      "test_id": "calorie_lie_2_b",
+      "weight": 90,
+      "added": "2026-04-09T15:07:54.414Z"
+    }
+  ]
+}
