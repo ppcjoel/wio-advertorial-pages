@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Advertorial Test Manager</title>
+<title>WiO Test Manager</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -702,19 +702,12 @@ body {
 // ══════════════════════════════════════════════════════════════
 // Config
 // ══════════════════════════════════════════════════════════════
-const CLIENTS = {
-  wio: {
-    name: 'WiO SmartFoods',
-    repo: 'ppcjoel/wio-advertorial-pages',
-    domain: 'nutritionsciencedaily.com',
-    color: '#E85D04'
-  },
-  ultimatedog: {
-    name: 'Ultimate Dog',
-    repo: 'ppcjoel/ultimatedog',
-    domain: 'caninewellnessjournal.com',
-    color: '#2D6A4F'
-  }
+const CLIENT = {
+  key: 'wio',
+  name: 'WiO SmartFoods',
+  repo: 'ppcjoel/wio-advertorial-pages',
+  domain: 'nutritionsciencedaily.com',
+  color: '#E85D04'
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -826,7 +819,7 @@ const UTM = {
 // ══════════════════════════════════════════════════════════════
 const State = {
   view: 'loading',       // loading | settings | dashboard | detail
-  clientKey: null,
+  clientKey: 'wio',
   tests: [],
   pages: [],
   currentTest: null,
@@ -864,7 +857,7 @@ function variantLetter(i) {
 }
 
 function client() {
-  return CLIENTS[State.clientKey] || null;
+  return CLIENT;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -898,12 +891,14 @@ function render() {
 // ── Settings ──
 function renderSettings(app) {
   const savedToken = localStorage.getItem('gh_token') || '';
-  const savedClient = localStorage.getItem('client_key') || '';
 
   app.innerHTML = `
     <div class="container" style="max-width:480px; margin-top:80px;">
-      <h2 style="font-size:20px; margin-bottom:4px;">Advertorial Test Manager</h2>
-      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:32px;">Connect your GitHub account to get started.</p>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+        <div style="width:8px; height:24px; border-radius:2px; background:${CLIENT.color};"></div>
+        <h2 style="font-size:20px;">WiO Test Manager</h2>
+      </div>
+      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:32px;">${CLIENT.domain} &mdash; connect your GitHub account to get started.</p>
 
       <div class="settings-section">
         <h3>GitHub Token</h3>
@@ -913,48 +908,24 @@ function renderSettings(app) {
         </div>
       </div>
 
-      <div class="settings-section">
-        <h3>Client</h3>
-        <div class="client-cards" id="client-cards">
-          ${Object.entries(CLIENTS).map(([key, cl]) => `
-            <div class="client-card ${savedClient === key ? 'selected' : ''}" data-client="${key}">
-              <div class="client-card-dot" style="background:${cl.color}"></div>
-              <div class="client-card-name">${cl.name}</div>
-              <div class="client-card-domain">${cl.domain}</div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-
       <div id="settings-error" style="color:#991B1B; font-size:13px; margin-bottom:12px; display:none;"></div>
 
       <button class="btn btn-primary" style="width:100%;" id="settings-save">Connect & Continue</button>
     </div>
   `;
 
-  // Events
-  document.querySelectorAll('.client-card').forEach(card => {
-    card.onclick = () => {
-      document.querySelectorAll('.client-card').forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-    };
-  });
-
   $('#settings-save').onclick = async () => {
     const token = $('#settings-token').value.trim();
-    const selected = document.querySelector('.client-card.selected');
     const errEl = $('#settings-error');
 
     if (!token) { errEl.textContent = 'Enter a GitHub token.'; errEl.style.display = 'block'; return; }
-    if (!selected) { errEl.textContent = 'Select a client.'; errEl.style.display = 'block'; return; }
 
-    const clientKey = selected.dataset.client;
     errEl.style.display = 'none';
     $('#settings-save').textContent = 'Validating...';
     $('#settings-save').disabled = true;
 
     GitHub.token = token;
-    GitHub.repo = CLIENTS[clientKey].repo;
+    GitHub.repo = CLIENT.repo;
 
     const valid = await GitHub.validateToken();
     if (!valid) {
@@ -966,8 +937,6 @@ function renderSettings(app) {
     }
 
     localStorage.setItem('gh_token', token);
-    localStorage.setItem('client_key', clientKey);
-    State.clientKey = clientKey;
     await loadDashboard();
   };
 }
@@ -1378,7 +1347,7 @@ function openNewTestModal() {
     const test = {
       name,
       display_name: displayName,
-      client: State.clientKey,
+      client: CLIENT.key,
       status: 'active',
       created: new Date().toISOString().split('T')[0],
       variants
@@ -1415,17 +1384,15 @@ function closeModal() {
 // ══════════════════════════════════════════════════════════════
 async function init() {
   const token = localStorage.getItem('gh_token');
-  const clientKey = localStorage.getItem('client_key');
 
-  if (!token || !clientKey || !CLIENTS[clientKey]) {
+  if (!token) {
     State.view = 'settings';
     render();
     return;
   }
 
-  State.clientKey = clientKey;
   GitHub.token = token;
-  GitHub.repo = CLIENTS[clientKey].repo;
+  GitHub.repo = CLIENT.repo;
 
   await loadDashboard();
 }
