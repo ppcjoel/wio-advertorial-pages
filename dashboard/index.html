@@ -285,6 +285,37 @@ body {
 
 .variant-table tr:last-child td { border-bottom: none; }
 
+.variant-table .wt-input {
+  width: 52px;
+  text-align: center;
+  padding: 4px 2px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--mono);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--text);
+}
+.variant-table .wt-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(232,93,4,0.1);
+}
+.wt-total {
+  font-size: 11px;
+  margin-left: 4px;
+}
+.wt-total.valid { color: var(--success, #22c55e); }
+.wt-total.invalid { color: var(--danger, #ef4444); }
+.wt-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.wt-bar .btn { flex-shrink: 0; }
+
 .mono {
   font-family: var(--mono);
   font-size: 12px;
@@ -1271,7 +1302,7 @@ function renderDetail(app) {
               return `
                 <tr>
                   <td><strong>${v.id.toUpperCase()}</strong></td>
-                  <td><strong>${v.weight || '—'}%</strong></td>
+                  <td><input type="number" class="wt-input" data-var="${v.id}" value="${v.weight || 0}" min="0" max="100">%</td>
                   <td class="mono">${v.page}</td>
                   <td><span class="mono">${v.test_id}</span></td>
                   <td style="font-size:11px; color:var(--text-secondary); white-space:nowrap;">${formatTimestamp(v.added)}</td>
@@ -1290,7 +1321,10 @@ function renderDetail(app) {
         </table>
       </div>
 
-      <div style="margin-bottom:24px;">
+      <div class="wt-bar">
+        <button class="btn btn-primary btn-sm" id="btn-save-weights" disabled>Save Weights</button>
+        <span class="wt-total" id="wt-total"></span>
+        <span style="flex:1;"></span>
         <button class="btn btn-secondary btn-sm" id="btn-add-variant">+ Add Variant</button>
       </div>
 
@@ -1337,6 +1371,62 @@ function renderDetail(app) {
   document.querySelectorAll('.copy-outbrain, .copy-full-outbrain').forEach(btn => {
     btn.onclick = (e) => { e.stopPropagation(); copyText(UTM.outbrain(btn.dataset.url)); };
   });
+
+  // Inline weight editing
+  const wtInputs = document.querySelectorAll('.wt-input');
+  const wtTotal = $('#wt-total');
+  const btnSave = $('#btn-save-weights');
+
+  function updateWeightTotal() {
+    let sum = 0;
+    wtInputs.forEach(inp => { sum += parseInt(inp.value) || 0; });
+    wtTotal.textContent = `Total: ${sum}%`;
+    const valid = sum === 100;
+    wtTotal.className = 'wt-total ' + (valid ? 'valid' : 'invalid');
+    btnSave.disabled = !valid;
+    return sum;
+  }
+  updateWeightTotal();
+
+  wtInputs.forEach(inp => {
+    inp.addEventListener('input', updateWeightTotal);
+  });
+
+  btnSave.onclick = async () => {
+    const hasToken = await ensureToken();
+    if (!hasToken) return;
+    let sum = 0;
+    const newWeights = {};
+    wtInputs.forEach(inp => {
+      const w = parseInt(inp.value) || 0;
+      newWeights[inp.dataset.var] = w;
+      sum += w;
+    });
+    if (sum !== 100) { toast('Weights must total 100%'); return; }
+
+    if (!t._sha) {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GitHub.repo}/contents/tests/${t.name}.json`, { headers: GitHub.headers() });
+        if (res.ok) t._sha = (await res.json()).sha;
+      } catch {}
+    }
+
+    t.variants.forEach(v => {
+      if (newWeights[v.id] !== undefined) v.weight = newWeights[v.id];
+    });
+
+    try {
+      const cleanTest = { ...t };
+      const sha = cleanTest._sha;
+      delete cleanTest._sha;
+      const newSha = await GitHub.updateTest(cleanTest, sha);
+      t._sha = newSha;
+      toast('Weights saved');
+    } catch (err) {
+      toast('Failed to save weights');
+      console.error(err);
+    }
+  };
 
   // Add variant
   $('#btn-add-variant').onclick = async () => {
