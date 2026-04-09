@@ -9,19 +9,19 @@
       "id": "a",
       "page": "keto-bread-science-v1.html",
       "test_id": "calorie_lie_a",
-      "weight": 34
+      "weight": 50
     },
     {
       "id": "b",
       "page": "keto-bread-transform-v1.html",
       "test_id": "calorie_lie_b",
-      "weight": 33
+      "weight": 25
     },
     {
       "id": "c",
       "page": "keto-muffins-doctor-v1.html",
       "test_id": "calorie_lie_c",
-      "weight": 33
+      "weight": 25
     }
   ]
 }
