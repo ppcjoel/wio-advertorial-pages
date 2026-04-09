@@ -753,7 +753,28 @@ const CLIENT = {
 };
 
 // ══════════════════════════════════════════════════════════════
-// GitHub API
+// Site API — reads from deployed site (no auth needed)
+// ══════════════════════════════════════════════════════════════
+const SiteAPI = {
+  async listTests() {
+    try {
+      const res = await fetch('/tests/_index.json');
+      if (!res.ok) return null;
+      const names = await res.json();
+      const tests = [];
+      for (const name of names) {
+        try {
+          const r = await fetch(`/tests/${name}.json`);
+          if (r.ok) tests.push(await r.json());
+        } catch {}
+      }
+      return tests;
+    } catch { return null; }
+  }
+};
+
+// ══════════════════════════════════════════════════════════════
+// GitHub API — used for write operations (requires PAT)
 // ══════════════════════════════════════════════════════════════
 const GitHub = {
   token: null,
@@ -777,7 +798,7 @@ const GitHub = {
     const res = await fetch(`https://api.github.com/repos/${this.repo}/contents/`, { headers: this.headers() });
     if (!res.ok) throw new Error('Failed to list pages');
     const items = await res.json();
-    return items.filter(f => f.type === 'file' && f.name.endsWith('.html')).map(f => f.name);
+    return items.filter(f => f.type === 'file' && f.name.endsWith('.html') && !f.name.startsWith('_')).map(f => f.name);
   },
 
   async listTests() {
@@ -787,7 +808,7 @@ const GitHub = {
     const files = await res.json();
     const tests = [];
     for (const f of files) {
-      if (!f.name.endsWith('.json')) continue;
+      if (!f.name.endsWith('.json') || f.name.startsWith('_')) continue;
       const detail = await fetch(f.url, { headers: this.headers() });
       if (!detail.ok) continue;
       const data = await detail.json();
@@ -838,6 +859,25 @@ const GitHub = {
       { method: 'DELETE', headers: { ...this.headers(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
     );
     if (!res.ok) throw new Error('Failed to delete test');
+  },
+
+  async updateIndex(testNames) {
+    let sha;
+    try {
+      const res = await fetch(`https://api.github.com/repos/${this.repo}/contents/tests/_index.json`, { headers: this.headers() });
+      if (res.ok) sha = (await res.json()).sha;
+    } catch {}
+    const body = {
+      message: 'Update test index',
+      content: btoa(JSON.stringify(testNames, null, 2)),
+      branch: 'main'
+    };
+    if (sha) body.sha = sha;
+    await fetch(`https://api.github.com/repos/${this.repo}/contents/tests/_index.json`, {
+      method: 'PUT',
+      headers: { ...this.headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
   }
 };
 
@@ -865,6 +905,7 @@ const State = {
   tests: [],
   pages: [],
   currentTest: null,
+  readOnly: true,        // true until PAT is provided
   _sha: {}
 };
 
@@ -900,6 +941,67 @@ function variantLetter(i) {
 
 function client() {
   return CLIENT;
+}
+
+// Prompt for PAT when a write operation is needed
+function ensureToken() {
+  return new Promise((resolve) => {
+    // Already have a token
+    if (GitHub.token) { resolve(true); return; }
+    // Try localStorage
+    const saved = localStorage.getItem('gh_token');
+    if (saved) {
+      GitHub.token = saved;
+      GitHub.repo = CLIENT.repo;
+      State.readOnly = false;
+      resolve(true);
+      return;
+    }
+    // Show inline token prompt
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.innerHTML = `
+      <div class="confirm-box" style="max-width:440px;">
+        <h3>GitHub Token Required</h3>
+        <p>This action writes to the repo. Enter a GitHub PAT with <code>repo</code> scope.</p>
+        <input type="password" class="form-input" id="token-prompt-input" placeholder="ghp_..." style="margin-bottom:12px;">
+        <div id="token-prompt-error" style="color:#991B1B; font-size:12px; margin-bottom:8px; display:none;"></div>
+        <div class="confirm-box-actions">
+          <button class="btn btn-secondary" id="token-prompt-cancel">Cancel</button>
+          <button class="btn btn-primary" id="token-prompt-save">Connect</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector('#token-prompt-input');
+    input.focus();
+    overlay.querySelector('#token-prompt-cancel').onclick = () => { overlay.remove(); resolve(false); };
+    overlay.querySelector('#token-prompt-save').onclick = async () => {
+      const token = input.value.trim();
+      const errEl = overlay.querySelector('#token-prompt-error');
+      if (!token) { errEl.textContent = 'Enter a token.'; errEl.style.display = 'block'; return; }
+      overlay.querySelector('#token-prompt-save').textContent = 'Validating...';
+      overlay.querySelector('#token-prompt-save').disabled = true;
+      GitHub.token = token;
+      GitHub.repo = CLIENT.repo;
+      const valid = await GitHub.validateToken();
+      if (!valid) {
+        errEl.textContent = 'Could not access the repo. Check your token.';
+        errEl.style.display = 'block';
+        GitHub.token = null;
+        overlay.querySelector('#token-prompt-save').textContent = 'Connect';
+        overlay.querySelector('#token-prompt-save').disabled = false;
+        return;
+      }
+      localStorage.setItem('gh_token', token);
+      State.readOnly = false;
+      overlay.remove();
+      resolve(true);
+    };
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') overlay.querySelector('#token-prompt-save').click();
+    });
+  });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -940,19 +1042,20 @@ function renderSettings(app) {
         <div style="width:8px; height:24px; border-radius:2px; background:${CLIENT.color};"></div>
         <h2 style="font-size:20px;">WiO Test Manager</h2>
       </div>
-      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:32px;">${CLIENT.domain} &mdash; connect your GitHub account to get started.</p>
+      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:32px;">${CLIENT.domain} &mdash; connect GitHub to create and edit tests, or view existing tests without a token.</p>
 
       <div class="settings-section">
         <h3>GitHub Token</h3>
         <div class="form-group">
           <input type="password" class="form-input" id="settings-token" value="${savedToken}" placeholder="ghp_...">
-          <div class="form-hint">Needs <code>repo</code> scope. Stored in your browser only.</div>
+          <div class="form-hint">Needs <code>repo</code> scope. Stored in your browser only. Optional for viewing.</div>
         </div>
       </div>
 
       <div id="settings-error" style="color:#991B1B; font-size:13px; margin-bottom:12px; display:none;"></div>
 
       <button class="btn btn-primary" style="width:100%;" id="settings-save">Connect & Continue</button>
+      <button class="btn btn-secondary" style="width:100%; margin-top:8px;" id="settings-skip">View Tests Without Token</button>
     </div>
   `;
 
@@ -979,8 +1082,11 @@ function renderSettings(app) {
     }
 
     localStorage.setItem('gh_token', token);
+    State.readOnly = false;
     await loadDashboard();
   };
+
+  $('#settings-skip').onclick = () => loadDashboard();
 }
 
 // ── Dashboard ──
@@ -988,9 +1094,18 @@ async function loadDashboard() {
   State.view = 'loading';
   render();
   try {
-    const [tests, pages] = await Promise.all([GitHub.listTests(), GitHub.listPages()]);
-    State.tests = tests;
-    State.pages = pages;
+    if (GitHub.token) {
+      // Full mode: use GitHub API (shows unpublished changes)
+      const [tests, pages] = await Promise.all([GitHub.listTests(), GitHub.listPages()]);
+      State.tests = tests;
+      State.pages = pages;
+      State.readOnly = false;
+    } else {
+      // Read-only: fetch from deployed site
+      const tests = await SiteAPI.listTests();
+      State.tests = tests || [];
+      State.pages = [];
+    }
     State.view = 'dashboard';
   } catch (e) {
     State.view = 'dashboard';
@@ -1065,10 +1180,19 @@ function renderDashboard(app) {
     };
   });
 
+  const openNewTestWithAuth = async () => {
+    const hasToken = await ensureToken();
+    if (!hasToken) return;
+    // Fetch pages list if we don't have it yet
+    if (State.pages.length === 0) {
+      try { State.pages = await GitHub.listPages(); } catch {}
+    }
+    openNewTestModal();
+  };
   const newTestBtn = $('#btn-new-test') || $('#btn-new-test-empty');
-  if (newTestBtn) newTestBtn.onclick = () => openNewTestModal();
+  if (newTestBtn) newTestBtn.onclick = openNewTestWithAuth;
   const newTestEmpty = $('#btn-new-test-empty');
-  if (newTestEmpty) newTestEmpty.onclick = () => openNewTestModal();
+  if (newTestEmpty) newTestEmpty.onclick = openNewTestWithAuth;
 
   if ($('#btn-refresh')) $('#btn-refresh').onclick = () => loadDashboard();
   if ($('#btn-settings')) $('#btn-settings').onclick = () => { State.view = 'settings'; render(); };
@@ -1192,6 +1316,18 @@ function renderDetail(app) {
   // Status change
   $('#status-select').onchange = async (e) => {
     const newStatus = e.target.value;
+    const oldStatus = t.status;
+    const hasToken = await ensureToken();
+    if (!hasToken) { e.target.value = oldStatus; return; }
+
+    // If we loaded read-only, we need the sha from GitHub
+    if (!t._sha) {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GitHub.repo}/contents/tests/${t.name}.json`, { headers: GitHub.headers() });
+        if (res.ok) t._sha = (await res.json()).sha;
+      } catch {}
+    }
+
     t.status = newStatus;
     e.target.className = `status-select ${newStatus}`;
     try {
@@ -1203,12 +1339,26 @@ function renderDetail(app) {
       toast(`Status updated to ${newStatus}`);
     } catch (err) {
       toast('Failed to update status');
+      t.status = oldStatus;
+      e.target.value = oldStatus;
+      e.target.className = `status-select ${oldStatus}`;
       console.error(err);
     }
   };
 
   // Delete
-  $('#btn-delete').onclick = () => {
+  $('#btn-delete').onclick = async () => {
+    const hasToken = await ensureToken();
+    if (!hasToken) return;
+
+    // If we loaded read-only, we need the sha from GitHub
+    if (!t._sha) {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GitHub.repo}/contents/tests/${t.name}.json`, { headers: GitHub.headers() });
+        if (res.ok) t._sha = (await res.json()).sha;
+      } catch {}
+    }
+
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
     overlay.innerHTML = `
@@ -1228,6 +1378,9 @@ function renderDetail(app) {
       overlay.remove();
       try {
         await GitHub.deleteTest(t.name, t._sha);
+        // Update the index
+        const remaining = State.tests.filter(x => x.name !== t.name).map(x => x.name);
+        await GitHub.updateIndex(remaining);
         toast('Test deleted');
         await loadDashboard();
       } catch (err) {
@@ -1431,6 +1584,9 @@ function openNewTestModal() {
 
     try {
       await GitHub.createTest(test);
+      // Update the index with all test names
+      const allNames = [...State.tests.map(t => t.name), test.name];
+      await GitHub.updateIndex(allNames);
       closeModal();
       toast('Test created!');
       await loadDashboard();
@@ -1459,17 +1615,30 @@ function closeModal() {
 // Init
 // ══════════════════════════════════════════════════════════════
 async function init() {
+  // Silently load saved token if available
   const token = localStorage.getItem('gh_token');
+  if (token) {
+    GitHub.token = token;
+    GitHub.repo = CLIENT.repo;
+    State.readOnly = false;
+  }
 
-  if (!token) {
+  // Try loading from deployed site (works without token)
+  if (!GitHub.token) {
+    const tests = await SiteAPI.listTests();
+    if (tests !== null) {
+      State.tests = tests;
+      State.view = 'dashboard';
+      render();
+      return;
+    }
+    // No index file yet and no token — show settings
     State.view = 'settings';
     render();
     return;
   }
 
-  GitHub.token = token;
-  GitHub.repo = CLIENT.repo;
-
+  // Have token — full load via GitHub API
   await loadDashboard();
 }
 
