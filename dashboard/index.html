@@ -461,6 +461,37 @@ body {
 
 .variant-row .form-select { flex: 1; }
 
+.variant-row .weight-input {
+  width: 64px;
+  flex-shrink: 0;
+  text-align: center;
+  padding: 8px 4px;
+  font-size: 13px;
+  font-family: var(--mono);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--text);
+}
+.variant-row .weight-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(232,93,4,0.1);
+}
+.weight-suffix {
+  font-size: 13px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  margin-left: -4px;
+}
+.weight-total {
+  font-size: 12px;
+  margin-top: 8px;
+  font-weight: 500;
+}
+.weight-total.valid { color: #065F46; }
+.weight-total.invalid { color: #991B1B; }
+
 .variant-row .remove-variant {
   width: 32px;
   height: 36px;
@@ -1083,6 +1114,7 @@ function renderDetail(app) {
           <thead>
             <tr>
               <th style="width:50px;">Var</th>
+              <th style="width:70px;">Traffic</th>
               <th>Page</th>
               <th>test_id</th>
               <th>Live URL</th>
@@ -1095,6 +1127,7 @@ function renderDetail(app) {
               return `
                 <tr>
                   <td><strong>${v.id.toUpperCase()}</strong></td>
+                  <td><strong>${v.weight || '—'}%</strong></td>
                   <td class="mono">${v.page}</td>
                   <td><span class="mono">${v.test_id}</span></td>
                   <td class="url-cell" title="${url}">${url}</td>
@@ -1122,14 +1155,14 @@ function renderDetail(app) {
           const url = UTM.baseUrl(c.domain, v.page);
           return `
             <div class="utm-block">
-              <div class="utm-label">Variant ${v.id.toUpperCase()} &mdash; Taboola</div>
+              <div class="utm-label">Variant ${v.id.toUpperCase()} (${v.weight || '—'}%) &mdash; Taboola</div>
               <div class="utm-value">
                 ${UTM.taboola(url)}
                 <button class="btn btn-secondary btn-sm copy-float copy-full-taboola" data-url="${url}">Copy</button>
               </div>
             </div>
             <div class="utm-block">
-              <div class="utm-label">Variant ${v.id.toUpperCase()} &mdash; Outbrain</div>
+              <div class="utm-label">Variant ${v.id.toUpperCase()} (${v.weight || '—'}%) &mdash; Outbrain</div>
               <div class="utm-value">
                 ${UTM.outbrain(url)}
                 <button class="btn btn-secondary btn-sm copy-float copy-full-outbrain" data-url="${url}">Copy</button>
@@ -1211,8 +1244,11 @@ function openNewTestModal() {
   let variantCount = 2;
 
   function getVariantRowsHTML(count) {
+    const defaultWeight = Math.floor(100 / count);
+    const remainder = 100 - (defaultWeight * count);
     let html = '';
     for (let i = 0; i < count; i++) {
+      const w = defaultWeight + (i === 0 ? remainder : 0);
       html += `
         <div class="variant-row">
           <div class="variant-letter">${variantLetter(i).toUpperCase()}</div>
@@ -1220,11 +1256,29 @@ function openNewTestModal() {
             <option value="">Select a page...</option>
             ${State.pages.map(p => `<option value="${p}">${p}</option>`).join('')}
           </select>
+          <input type="number" class="weight-input" min="1" max="99" value="${w}">
+          <span class="weight-suffix">%</span>
           ${count > 2 ? `<button class="remove-variant" data-idx="${i}">&times;</button>` : '<div style="width:32px"></div>'}
         </div>
       `;
     }
+    html += '<div class="weight-total" id="weight-total"></div>';
     return html;
+  }
+
+  function updateWeightTotal() {
+    const weights = modal.querySelectorAll('.weight-input');
+    const totalEl = modal.querySelector('#weight-total');
+    if (!totalEl) return;
+    let sum = 0;
+    weights.forEach(w => sum += parseInt(w.value) || 0);
+    if (sum === 100) {
+      totalEl.textContent = 'Total: 100%';
+      totalEl.className = 'weight-total valid';
+    } else {
+      totalEl.textContent = `Total: ${sum}% (must equal 100%)`;
+      totalEl.className = 'weight-total invalid';
+    }
   }
 
   function updatePreview() {
@@ -1232,6 +1286,8 @@ function openNewTestModal() {
     const selects = modal.querySelectorAll('.variant-page-select');
     const preview = modal.querySelector('#test-id-preview-items');
     if (!preview) return;
+
+    updateWeightTotal();
 
     if (!name) {
       preview.innerHTML = '<span style="color:var(--text-tertiary); font-size:12px;">Enter a test name to see preview</span>';
@@ -1322,6 +1378,9 @@ function openNewTestModal() {
     modal.querySelectorAll('.variant-page-select').forEach(sel => {
       sel.onchange = updatePreview;
     });
+    modal.querySelectorAll('.weight-input').forEach(inp => {
+      inp.oninput = updateWeightTotal;
+    });
   }
 
   async function createTest() {
@@ -1336,6 +1395,11 @@ function openNewTestModal() {
     if (!displayName) { errEl.textContent = 'Display name is required.'; errEl.style.display = 'block'; return; }
     if (State.tests.some(t => t.name === name)) { errEl.textContent = 'A test with this name already exists.'; errEl.style.display = 'block'; return; }
 
+    const weights = modal.querySelectorAll('.weight-input');
+    let weightSum = 0;
+    weights.forEach(w => weightSum += parseInt(w.value) || 0);
+    if (weightSum !== 100) { errEl.textContent = `Traffic weights must total 100% (currently ${weightSum}%).`; errEl.style.display = 'block'; return; }
+
     const variants = [];
     const usedPages = new Set();
     for (let i = 0; i < selects.length; i++) {
@@ -1346,7 +1410,8 @@ function openNewTestModal() {
       variants.push({
         id: variantLetter(i),
         page,
-        test_id: `${name}_${variantLetter(i)}`
+        test_id: `${name}_${variantLetter(i)}`,
+        weight: parseInt(weights[i].value)
       });
     }
 
