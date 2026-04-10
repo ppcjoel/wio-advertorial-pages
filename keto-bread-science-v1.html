@@ -27,6 +27,28 @@
     };
   </script>
 
+  <!-- DataLayer Events for GTM Triggers (Meta Pixel ViewContent + Lead) -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    // Fire advertorial_page_view immediately — triggers Meta Pixel ViewContent via GTM
+    window.dataLayer.push({
+      event: 'advertorial_page_view',
+      content_name: window.__landerConfig ? window.__landerConfig.lander : document.title,
+      content_category: 'advertorial'
+    });
+    // Fire product_cta_click on any CTA click — triggers Meta Pixel Lead via GTM
+    document.addEventListener('click', function(e) {
+      var cta = e.target.closest('[data-cta], .cta-button');
+      if (cta) {
+        window.dataLayer.push({
+          event: 'product_cta_click',
+          content_name: window.__landerConfig ? window.__landerConfig.lander : document.title,
+          content_category: 'advertorial_cta',
+          cta_text: cta.textContent.trim()
+        });
+      }
+    });
+  </script>
 
   <style>
     :root {
