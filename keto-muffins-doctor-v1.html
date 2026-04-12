@@ -10,6 +10,17 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 })(window,document,'script','dataLayer','GTM-WJK46JRR');</script>
 <!-- End Google Tag Manager -->
 <!-- PPC-TRACKING-END -->
+<!-- PPC-TRACKING-START -->
+<script>
+window.__landerConfig = {
+  lander: "keto-muffins-doctor-v1.html",
+  lander_version: "1.0",
+  test_id: "",
+  ctaUrl: "https://wiodiet.com/collections/all"
+};
+</script>
+<!-- PPC-TRACKING-END -->
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Google Tag Manager -->
@@ -253,6 +264,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <!-- PPC-TRACKING-END -->
+
   <!-- Google Tag Manager (noscript) -->
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WJK46JRR"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -553,6 +565,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     } catch (err) { console.warn('[Tracking Error]', err); }
   })();
   </script>
+
 <!-- PPC-TRACKING-START -->
 <script>
 (function(){
@@ -582,7 +595,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     function buildUrl(base){
       var p=getLpParams();
-      var u=new URL(base,window.location.origin);
+      var u=new URL(base);
       Object.keys(p).forEach(function(k){u.searchParams.set(k,p[k])});
       return u.toString();
     }
@@ -590,7 +603,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     /* ---------- 2. CTA interception ---------- */
     function fireCta(url){
       dl.push({event:'cta_click',cta_url:url});
-      window.location.href=url;
+      window.open(url,'_blank');
     }
 
     /* data-cta links/buttons */
@@ -608,17 +621,23 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       window.showModal=function(){
         dl.push({event:'cta_click',cta_source:'showModal'});
         _origShow.apply(this,arguments);
+        /* Auto-open the CTA URL in a new tab */
+        if(cfg.ctaUrl){
+          var url=buildUrl(cfg.ctaUrl);
+          window.open(url,'_blank');
+        }
       };
     }
 
-    /* Patch any "Proceed to Shop" or similar modal confirm buttons */
+    /* Patch modal confirm buttons to also redirect with params */
     document.addEventListener('DOMContentLoaded',function(){
       var modalBtns=document.querySelectorAll('#redirectModal button, [onclick*="closeModal"]');
       modalBtns.forEach(function(btn){
-        btn.addEventListener('click',function(){
+        btn.addEventListener('click',function(e){
           if(cfg.ctaUrl){
             var url=buildUrl(cfg.ctaUrl);
             dl.push({event:'cta_click',cta_url:url,cta_source:'modal_confirm'});
+            window.open(url,'_blank');
           }
         });
       });
