@@ -27,6 +27,8 @@ window.__landerConfig = {
 
 
 
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BREAKING: The 48-Calorie "Metabolic Glitch" Helping Skeptics Slim Down</title>
@@ -112,6 +114,7 @@ window.__landerConfig = {
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <!-- PPC-TRACKING-END -->
+
 
 
 
@@ -408,7 +411,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </article>
     </main>
 
-    <!-- Footer -->
+    <!-- footer + modals -->
     <footer class="bg-gray-900 text-gray-400 py-12 mt-8">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div class="mb-6">
@@ -418,15 +421,116 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </p>
             </div>
             <div class="flex justify-center space-x-6 text-sm mb-8 border-b border-gray-800 pb-8">
-                <a href="#" class="hover:text-white transition">Privacy Policy</a>
-                <a href="#" class="hover:text-white transition">Terms & Conditions</a>
-                <a href="#" class="hover:text-white transition">Contact Us</a>
+                <button onclick="openModal('privacyModal')" class="hover:text-white transition cursor-pointer bg-transparent border-none p-0 m-0 text-gray-400 font-inherit">Privacy Policy</button>
+                <button onclick="openModal('termsModal')" class="hover:text-white transition cursor-pointer bg-transparent border-none p-0 m-0 text-gray-400 font-inherit">Terms & Conditions</button>
+                <button onclick="openModal('contactModal')" class="hover:text-white transition cursor-pointer bg-transparent border-none p-0 m-0 text-gray-400 font-inherit">Contact Us</button>
             </div>
             <div class="text-xs opacity-50">
                 &copy; 2026 Nutrition Science Daily. All rights reserved. These statements have not been evaluated by the FDA. This product is not intended to diagnose, treat, or cure any disease.
             </div>
         </div>
     </footer>
+
+    <!-- Compliance Modals -->
+    
+    <!-- Privacy Policy Modal -->
+    <div id="privacyModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-sm transition-opacity p-4" onclick="closeModalOutside(event, 'privacyModal')">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col relative" onclick="event.stopPropagation()">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-2xl">
+                <h3 class="text-xl font-bold text-gray-900 font-sans">Privacy Policy</h3>
+                <button onclick="closeModal('privacyModal')" class="text-gray-400 hover:text-gray-900 text-2xl leading-none">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto modal-scroll text-sm text-gray-600 prose prose-sm max-w-none">
+                <p class="font-bold">Last Updated: April 2026</p>
+                <p>This Privacy Policy outlines how Nutrition Science Daily ("we", "our", or "us") collects, uses, and shares your personal information.</p>
+                <h4 class="text-gray-900 font-bold mt-4">1. Advertorial Tracking & Cookies</h4>
+                <p>This website is an advertorial and native advertisement. We use cookies, web beacons, and tracking pixels to measure campaign performance, track engagement, and facilitate affiliate commissions. By interacting with this site, you consent to our use of these marketing technologies.</p>
+                <h4 class="text-gray-900 font-bold mt-4">2. Information Collection</h4>
+                <p>We may collect technical data such as your IP address, browser type, referring URL, and interaction metrics on this page to optimize our advertising campaigns.</p>
+                <h4 class="text-gray-900 font-bold mt-4">3. Data Sharing with Sponsors</h4>
+                <p>Because this content is sponsored, anonymized interaction metrics and conversion data may be shared with our primary sponsor, WiO SmartFoods, to track the efficacy of this advertorial campaign.</p>
+                <h4 class="text-gray-900 font-bold mt-4">4. Third-Party Links</h4>
+                <p>Links on this page will direct you to WiO SmartFoods' official website. Once you leave our domain, your data will be governed by their respective Privacy Policy and Terms of Service.</p>
+            </div>
+            <div class="p-4 border-t border-gray-100 text-right bg-gray-50 rounded-b-2xl">
+                <button onclick="closeModal('privacyModal')" class="bg-gray-900 hover:bg-black text-white px-6 py-2 rounded-lg font-medium transition-colors">Acknowledge & Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms & Conditions Modal -->
+    <div id="termsModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-sm transition-opacity p-4" onclick="closeModalOutside(event, 'termsModal')">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col relative" onclick="event.stopPropagation()">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-2xl">
+                <h3 class="text-xl font-bold text-gray-900 font-sans">Terms & Conditions</h3>
+                <button onclick="closeModal('termsModal')" class="text-gray-400 hover:text-gray-900 text-2xl leading-none">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto modal-scroll text-sm text-gray-600 prose prose-sm max-w-none">
+                <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-md mb-6">
+                    <h4 class="text-yellow-800 font-bold mt-0 mb-2">IMPORTANT ADVERTORIAL DISCLOSURE</h4>
+                    <p class="text-yellow-900 text-xs mb-0">This website is an advertorial and not a traditional news publication. This page is sponsored content created to promote WiO SmartFoods. The "author" Marcus Vance is a pen name used for illustrative and marketing purposes. We receive compensation for clicks or purchases made through the links on this page.</p>
+                </div>
+                
+                <h4 class="text-gray-900 font-bold mt-4">1. Medical Disclaimer</h4>
+                <p>The information provided on this site is intended for your general knowledge only and is not a substitute for professional medical advice or treatment for specific medical conditions. Always seek the advice of your physician or other qualified health care provider with any questions you may have regarding a medical condition.</p>
+                <h4 class="text-gray-900 font-bold mt-4">2. Testimonials and Results</h4>
+                <p>Representations regarding the efficacy and safety of the products have not been evaluated by the Food and Drug Administration. The FDA only evaluates foods and drugs, not supplements like these products. These products are not intended to diagnose, prevent, treat, or cure any disease. Results discussed on this page are not typical, and individual results may vary.</p>
+                <h4 class="text-gray-900 font-bold mt-4">3. Limitation of Liability</h4>
+                <p>Under no circumstances shall Nutrition Science Daily or its partners be liable for any direct, indirect, incidental, or consequential damages that result from the use of, or the inability to use, the materials on this site.</p>
+            </div>
+            <div class="p-4 border-t border-gray-100 text-right bg-gray-50 rounded-b-2xl">
+                <button onclick="closeModal('termsModal')" class="bg-gray-900 hover:bg-black text-white px-6 py-2 rounded-lg font-medium transition-colors">I Understand</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Us Modal -->
+    <div id="contactModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-sm transition-opacity p-4" onclick="closeModalOutside(event, 'contactModal')">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full flex flex-col relative" onclick="event.stopPropagation()">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-2xl">
+                <h3 class="text-xl font-bold text-gray-900 font-sans">Contact Us</h3>
+                <button onclick="closeModal('contactModal')" class="text-gray-400 hover:text-gray-900 text-2xl leading-none">&times;</button>
+            </div>
+            <div class="p-6 text-sm text-gray-600">
+                <p class="mb-4">For inquiries related to the advertising and content of this advertorial page, please reach out to our media compliance team.</p>
+                
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-4">
+                    <p class="font-bold text-gray-900 mb-1">Email Support:</p>
+                    <p class="text-brand-600">compliance@nutritionsciencedaily.com</p>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <p class="font-bold text-gray-900 mb-1">Product Inquiries:</p>
+                    <p>For questions regarding WiO SmartFoods products, shipping, or orders, please contact WiO directly via their official website.</p>
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-100 text-right bg-gray-50 rounded-b-2xl">
+                <button onclick="closeModal('contactModal')" class="bg-gray-900 hover:bg-black text-white px-6 py-2 rounded-lg font-medium transition-colors">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Logic -->
+    <script>
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+            // Prevent background scrolling
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            // Restore background scrolling
+            document.body.style.overflow = 'auto';
+        }
+
+        function closeModalOutside(event, modalId) {
+            // Close modal when clicking on the backdrop
+            if (event.target.id === modalId) {
+                closeModal(modalId);
+            }
+        }
+    </script>
 
     <!-- Modal -->
     <div id="redirectModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-gray-900 bg-opacity-60 backdrop-blur-sm transition-opacity">
@@ -453,6 +557,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             document.getElementById('redirectModal').classList.add('hidden');
         }
     </script>
+
 
 
 
