@@ -1,0 +1,23 @@
+{
+  "name": "peanut_butter",
+  "display_name": "Peanut Butter",
+  "client": "wio",
+  "status": "active",
+  "created": "2026-04-12T17:51:10.482Z",
+  "variants": [
+    {
+      "id": "a",
+      "page": "peanut_butter.html",
+      "test_id": "peanut_butter_a",
+      "weight": 50,
+      "added": "2026-04-12T17:51:10.481Z"
+    },
+    {
+      "id": "b",
+      "page": "peanut_butter_angle2.html",
+      "test_id": "peanut_butter_b",
+      "weight": 50,
+      "added": "2026-04-12T17:51:10.481Z"
+    }
+  ]
+}
