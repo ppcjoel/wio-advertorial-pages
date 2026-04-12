@@ -10,6 +10,17 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 })(window,document,'script','dataLayer','GTM-WJK46JRR');</script>
 <!-- End Google Tag Manager -->
 <!-- PPC-TRACKING-END -->
+<!-- PPC-TRACKING-START -->
+<script>
+window.__landerConfig = {
+  lander: "muffins-3.html",
+  lander_version: "1.0",
+  test_id: "",
+  ctaUrl: "https://wiodiet.com/collections/all"
+};
+</script>
+<!-- PPC-TRACKING-END -->
+
 
 
 
@@ -101,6 +112,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <!-- PPC-TRACKING-END -->
+
 
 
 
@@ -376,10 +388,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 </p>
 
                 <div class="flex flex-col items-center gap-4">
-                    <button onclick="showModal()" class="w-full md:w-auto inline-flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white font-bold font-sans py-4 px-10 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1 text-lg">
+                    <a href="https://wiodiet.com/collections/snacks-desserts" target="_blank" rel="noopener noreferrer" class="w-full md:w-auto inline-flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white font-bold font-sans py-4 px-10 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1 text-lg">
                         Shop The Guilt-Free Bakery
                         <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                    </button>
+                    </a>
                     
                     <div class="flex items-center gap-2 mt-3">
                         <svg class="w-5 h-5 text-brand-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
@@ -393,8 +405,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     </p>
                 </div>
             </div>
-
-        </article>
+</article>
     </main>
 
     <!-- Footer -->
@@ -448,6 +459,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 
 
+
 <!-- PPC-TRACKING-START -->
 <script>
 (function(){
@@ -477,7 +489,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     function buildUrl(base){
       var p=getLpParams();
-      var u=new URL(base,window.location.origin);
+      var u=new URL(base);
       Object.keys(p).forEach(function(k){u.searchParams.set(k,p[k])});
       return u.toString();
     }
@@ -485,7 +497,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     /* ---------- 2. CTA interception ---------- */
     function fireCta(url){
       dl.push({event:'cta_click',cta_url:url});
-      window.location.href=url;
+      window.open(url,'_blank');
     }
 
     /* data-cta links/buttons */
@@ -503,17 +515,23 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       window.showModal=function(){
         dl.push({event:'cta_click',cta_source:'showModal'});
         _origShow.apply(this,arguments);
+        /* Auto-open the CTA URL in a new tab */
+        if(cfg.ctaUrl){
+          var url=buildUrl(cfg.ctaUrl);
+          window.open(url,'_blank');
+        }
       };
     }
 
-    /* Patch any "Proceed to Shop" or similar modal confirm buttons */
+    /* Patch modal confirm buttons to also redirect with params */
     document.addEventListener('DOMContentLoaded',function(){
       var modalBtns=document.querySelectorAll('#redirectModal button, [onclick*="closeModal"]');
       modalBtns.forEach(function(btn){
-        btn.addEventListener('click',function(){
+        btn.addEventListener('click',function(e){
           if(cfg.ctaUrl){
             var url=buildUrl(cfg.ctaUrl);
             dl.push({event:'cta_click',cta_url:url,cta_source:'modal_confirm'});
+            window.open(url,'_blank');
           }
         });
       });
