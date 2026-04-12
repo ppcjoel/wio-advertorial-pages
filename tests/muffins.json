@@ -1,0 +1,30 @@
+{
+  "name": "muffins",
+  "display_name": "Muffins",
+  "client": "wio",
+  "status": "active",
+  "created": "2026-04-12T15:11:16.581Z",
+  "variants": [
+    {
+      "id": "a",
+      "page": "muffins.html",
+      "test_id": "muffins_a",
+      "weight": 34,
+      "added": "2026-04-12T15:11:16.580Z"
+    },
+    {
+      "id": "b",
+      "page": "muffins-2.html",
+      "test_id": "muffins_b",
+      "weight": 33,
+      "added": "2026-04-12T15:11:16.580Z"
+    },
+    {
+      "id": "c",
+      "page": "muffins-3.html",
+      "test_id": "muffins_c",
+      "weight": 33,
+      "added": "2026-04-12T15:11:16.580Z"
+    }
+  ]
+}
