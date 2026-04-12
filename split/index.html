@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- PPC-TRACKING-START -->
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-WJK46JRR');</script>
+<!-- End Google Tag Manager -->
+<!-- PPC-TRACKING-END -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Redirecting...</title>
@@ -11,6 +20,12 @@ body { margin: 0; background: #fff; display: flex; justify-content: center; alig
 </style>
 </head>
 <body>
+<!-- PPC-TRACKING-START -->
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WJK46JRR"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+<!-- PPC-TRACKING-END -->
 <div class="spinner"></div> Loading...
 <script>
 (function () {
@@ -74,5 +89,105 @@ body { margin: 0; background: #fff; display: flex; justify-content: center; alig
   }
 })();
 </script>
+<!-- PPC-TRACKING-START -->
+<script>
+(function(){
+  try{
+    var dl=window.dataLayer=window.dataLayer||[];
+    var cfg=window.__landerConfig||{};
+
+    /* ---------- 1. Parameter capture ---------- */
+    var sp=new URLSearchParams(window.location.search);
+    sp.forEach(function(v,k){
+      try{sessionStorage.setItem('lp_'+k,v)}catch(e){}
+    });
+    // Enrichment from config
+    ['lander','lander_version','test_id'].forEach(function(k){
+      if(cfg[k])try{sessionStorage.setItem('lp_'+k,cfg[k])}catch(e){}
+    });
+
+    /* Helper: collect all lp_ params */
+    function getLpParams(){
+      var p={};
+      for(var i=0;i<sessionStorage.length;i++){
+        var k=sessionStorage.key(i);
+        if(k&&k.indexOf('lp_')===0) p[k.slice(3)]=sessionStorage.getItem(k);
+      }
+      return p;
+    }
+
+    function buildUrl(base){
+      var p=getLpParams();
+      var u=new URL(base,window.location.origin);
+      Object.keys(p).forEach(function(k){u.searchParams.set(k,p[k])});
+      return u.toString();
+    }
+
+    /* ---------- 2. CTA interception ---------- */
+    function fireCta(url){
+      dl.push({event:'cta_click',cta_url:url});
+      window.location.href=url;
+    }
+
+    /* data-cta links/buttons */
+    document.addEventListener('click',function(e){
+      var el=e.target.closest('[data-cta]');
+      if(!el) return;
+      e.preventDefault();
+      var base=el.getAttribute('data-cta')||cfg.ctaUrl||el.href||'';
+      if(base) fireCta(buildUrl(base));
+    });
+
+    /* Patch showModal if it exists (legacy advertorial pattern) */
+    if(typeof window.showModal==='function'){
+      var _origShow=window.showModal;
+      window.showModal=function(){
+        dl.push({event:'cta_click',cta_source:'showModal'});
+        _origShow.apply(this,arguments);
+      };
+    }
+
+    /* Patch any "Proceed to Shop" or similar modal confirm buttons */
+    document.addEventListener('DOMContentLoaded',function(){
+      var modalBtns=document.querySelectorAll('#redirectModal button, [onclick*="closeModal"]');
+      modalBtns.forEach(function(btn){
+        btn.addEventListener('click',function(){
+          if(cfg.ctaUrl){
+            var url=buildUrl(cfg.ctaUrl);
+            dl.push({event:'cta_click',cta_url:url,cta_source:'modal_confirm'});
+          }
+        });
+      });
+    });
+
+    /* ---------- 3. Scroll depth ---------- */
+    var scrollFired={};
+    function checkScroll(){
+      var h=document.documentElement.scrollHeight-window.innerHeight;
+      if(h<=0) return;
+      var pct=Math.round(window.scrollY/h*100);
+      [25,50,75,100].forEach(function(t){
+        if(pct>=t&&!scrollFired[t]){
+          scrollFired[t]=true;
+          dl.push({event:'scroll_depth',depth:t});
+        }
+      });
+    }
+    window.addEventListener('scroll',checkScroll,{passive:true});
+
+    /* ---------- 4. Time on page ---------- */
+    [15,30,60].forEach(function(s){
+      setTimeout(function(){
+        dl.push({event:'time_on_page',seconds:s});
+      },s*1000);
+    });
+
+    /* ---------- 5. Page view ---------- */
+    dl.push({event:'lander_view',lander:cfg.lander||window.location.pathname});
+
+  }catch(e){/* tracking must never break the page */}
+})();
+</script>
+<!-- PPC-TRACKING-END -->
 </body>
 </html>
