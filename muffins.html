@@ -37,6 +37,8 @@ window.__landerConfig = {
 
 
 
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BREAKING: The 48-Calorie "Metabolic Glitch" Helping Skeptics Slim Down</title>
@@ -122,6 +124,7 @@ window.__landerConfig = {
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <!-- PPC-TRACKING-END -->
+
 
 
 
@@ -575,6 +578,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 
 
+
 <!-- PPC-TRACKING-START -->
 <script>
 (function(){
@@ -660,23 +664,38 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         btn.parentNode.replaceChild(a,btn);
       });
 
-      /* Turn showModal triggers into links that open the modal.
-         If the element is an <a> with an existing href, override it
-         with the parameterized CTA URL so UTMs pass through. */
+      /* Turn showModal triggers into links that open the modal. */
       var ctaBtns=document.querySelectorAll('[onclick*="showModal"]');
       ctaBtns.forEach(function(btn){
         btn.removeAttribute('onclick');
-        if(btn.tagName==='A' && cfg.ctaUrl){
-          btn.href=url;
-          btn.target='_blank';
-          btn.rel='noopener';
-        }
         btn.addEventListener('click',function(e){
           e.preventDefault();
           dl.push({event:'cta_click',cta_source:'showModal'});
           if(typeof _origShow==='function') _origShow();
         });
       });
+
+      /* Rewrite ALL outbound <a> links pointing to the CTA domain
+         so UTM params pass through even on pages that use plain links
+         instead of the showModal pattern. */
+      if(cfg.ctaUrl){
+        try{
+          var ctaDomain=new URL(cfg.ctaUrl).hostname;
+          document.querySelectorAll('a[href]').forEach(function(a){
+            try{
+              var h=new URL(a.href);
+              if(h.hostname===ctaDomain){
+                a.href=buildUrl(a.href);
+                a.addEventListener('click',function(){
+                  this.href=buildUrl(this.getAttribute('data-orig-href')||this.href);
+                  dl.push({event:'cta_click',cta_url:this.href,cta_source:'outbound_link'});
+                });
+                a.setAttribute('data-orig-href',a.href.split('?')[0]);
+              }
+            }catch(e){}
+          });
+        }catch(e){}
+      }
     });
 
     /* ---------- 3. Scroll depth ---------- */
