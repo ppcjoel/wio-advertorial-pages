@@ -23,6 +23,8 @@ window.__landerConfig = {
 
 
 
+
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Redirecting...</title>
@@ -39,6 +41,7 @@ body { margin: 0; background: #fff; display: flex; justify-content: center; alig
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <!-- PPC-TRACKING-END -->
+
 
 
 <div class="spinner"></div> Loading...
@@ -104,6 +107,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
 })();
 </script>
+
 
 
 <!-- PPC-TRACKING-START -->
@@ -172,8 +176,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       if(!cfg.ctaUrl) return;
       var url=buildUrl(cfg.ctaUrl);
 
-      /* Find modal confirm buttons */
-      var modalBtns=document.querySelectorAll('#redirectModal button, [onclick*="closeModal"]');
+      /* Find modal confirm buttons — only inside #redirectModal */
+      var modalBtns=document.querySelectorAll('#redirectModal button, #redirectModal [onclick*="closeModal"]');
       modalBtns.forEach(function(btn){
         /* Replace button with a real <a> link */
         var a=document.createElement('a');
