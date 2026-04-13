@@ -31,6 +31,8 @@ window.__landerConfig = {
 
 
 
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BREAKING: The 48-Calorie "Metabolic Glitch" Helping Skeptics Slim Down</title>
@@ -116,6 +118,7 @@ window.__landerConfig = {
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <!-- PPC-TRACKING-END -->
+
 
 
 
@@ -569,6 +572,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 
 
+
 <!-- PPC-TRACKING-START -->
 <script>
 (function(){
@@ -604,44 +608,65 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     }
 
     /* ---------- 2. CTA interception ---------- */
-    function fireCta(url){
-      dl.push({event:'cta_click',cta_url:url});
-      window.open(url,'_blank');
-    }
 
-    /* data-cta links/buttons */
+    /* data-cta links/buttons — turn into real links with params */
     document.addEventListener('click',function(e){
       var el=e.target.closest('[data-cta]');
       if(!el) return;
       e.preventDefault();
       var base=el.getAttribute('data-cta')||cfg.ctaUrl||el.href||'';
-      if(base) fireCta(buildUrl(base));
+      if(base){
+        var url=buildUrl(base);
+        dl.push({event:'cta_click',cta_url:url});
+        window.location.href=url;
+      }
     });
 
-    /* Patch showModal if it exists (legacy advertorial pattern) */
+    /* Patch showModal — only fires event, does NOT open URL
+       (the modal "Proceed to Shop" button handles the actual redirect) */
     if(typeof window.showModal==='function'){
       var _origShow=window.showModal;
       window.showModal=function(){
         dl.push({event:'cta_click',cta_source:'showModal'});
         _origShow.apply(this,arguments);
-        /* Auto-open the CTA URL in a new tab */
-        if(cfg.ctaUrl){
-          var url=buildUrl(cfg.ctaUrl);
-          window.open(url,'_blank');
-        }
       };
     }
 
-    /* Patch modal confirm buttons to also redirect with params */
+    /* Rewrite modal confirm buttons into real links with params.
+       Replaces the button with an <a> tag styled identically so
+       the browser treats it as a real navigation (no popup blocker). */
     document.addEventListener('DOMContentLoaded',function(){
+      if(!cfg.ctaUrl) return;
+      var url=buildUrl(cfg.ctaUrl);
+
+      /* Find modal confirm buttons */
       var modalBtns=document.querySelectorAll('#redirectModal button, [onclick*="closeModal"]');
       modalBtns.forEach(function(btn){
+        /* Replace button with a real <a> link */
+        var a=document.createElement('a');
+        a.href=url;
+        a.target='_blank';
+        a.rel='noopener';
+        a.className=btn.className;
+        a.innerHTML=btn.innerHTML;
+        a.style.cssText=btn.style.cssText+';text-decoration:none;display:inline-block;text-align:center;';
+        a.addEventListener('click',function(){
+          dl.push({event:'cta_click',cta_url:this.href,cta_source:'modal_confirm'});
+          /* Update href at click time in case sessionStorage changed */
+          this.href=buildUrl(cfg.ctaUrl);
+        });
+        btn.parentNode.replaceChild(a,btn);
+      });
+
+      /* Also turn the main CTA button (showModal trigger) into a link
+         that shows the modal AND has a real href as fallback */
+      var ctaBtns=document.querySelectorAll('[onclick*="showModal"]');
+      ctaBtns.forEach(function(btn){
+        btn.removeAttribute('onclick');
         btn.addEventListener('click',function(e){
-          if(cfg.ctaUrl){
-            var url=buildUrl(cfg.ctaUrl);
-            dl.push({event:'cta_click',cta_url:url,cta_source:'modal_confirm'});
-            window.open(url,'_blank');
-          }
+          e.preventDefault();
+          dl.push({event:'cta_click',cta_source:'showModal'});
+          if(typeof _origShow==='function') _origShow();
         });
       });
     });
