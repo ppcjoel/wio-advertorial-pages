@@ -25,6 +25,8 @@ window.__landerConfig = {
 
 
 
+
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Google Tag Manager -->
@@ -268,6 +270,7 @@ window.__landerConfig = {
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <!-- PPC-TRACKING-END -->
+
 
 
 
@@ -580,6 +583,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 
 
+
 <!-- PPC-TRACKING-START -->
 <script>
 (function(){
@@ -665,11 +669,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         btn.parentNode.replaceChild(a,btn);
       });
 
-      /* Also turn the main CTA button (showModal trigger) into a link
-         that shows the modal AND has a real href as fallback */
+      /* Turn showModal triggers into links that open the modal.
+         If the element is an <a> with an existing href, override it
+         with the parameterized CTA URL so UTMs pass through. */
       var ctaBtns=document.querySelectorAll('[onclick*="showModal"]');
       ctaBtns.forEach(function(btn){
         btn.removeAttribute('onclick');
+        if(btn.tagName==='A' && cfg.ctaUrl){
+          btn.href=url;
+          btn.target='_blank';
+          btn.rel='noopener';
+        }
         btn.addEventListener('click',function(e){
           e.preventDefault();
           dl.push({event:'cta_click',cta_source:'showModal'});
