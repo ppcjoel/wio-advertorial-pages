@@ -33,6 +33,8 @@ window.__landerConfig = {
 
 
 
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BREAKING: The 48-Calorie "Metabolic Glitch" Helping Skeptics Slim Down</title>
@@ -118,6 +120,7 @@ window.__landerConfig = {
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <!-- PPC-TRACKING-END -->
+
 
 
 
@@ -573,6 +576,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 
 
+
 <!-- PPC-TRACKING-START -->
 <script>
 (function(){
@@ -639,8 +643,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       if(!cfg.ctaUrl) return;
       var url=buildUrl(cfg.ctaUrl);
 
-      /* Find modal confirm buttons */
-      var modalBtns=document.querySelectorAll('#redirectModal button, [onclick*="closeModal"]');
+      /* Find modal confirm buttons — only inside #redirectModal */
+      var modalBtns=document.querySelectorAll('#redirectModal button, #redirectModal [onclick*="closeModal"]');
       modalBtns.forEach(function(btn){
         /* Replace button with a real <a> link */
         var a=document.createElement('a');
