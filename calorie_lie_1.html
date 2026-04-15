@@ -60,6 +60,9 @@ obApi('track', 'PAGE_VIEW');
 
 
 
+
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Google Tag Manager -->
@@ -181,6 +184,7 @@ obApi('track', 'PAGE_VIEW');
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <!-- PPC-TRACKING-END -->
+
 
 
 
@@ -539,6 +543,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 
 
+
 <!-- PPC-TRACKING-START -->
 <script>
 (function(){
@@ -565,12 +570,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       if(cfg[k])try{sessionStorage.setItem('lp_'+k,cfg[k])}catch(e){}
     });
 
-    /* Helper: collect all lp_ params */
+    /* Helper: collect all lp_ params — keep the lp_ prefix on the
+       outbound URL so Shopify/GA4 can distinguish original ad-click
+       attribution (lp_utm_*) from later touch UTMs. */
     function getLpParams(){
       var p={};
       for(var i=0;i<sessionStorage.length;i++){
         var k=sessionStorage.key(i);
-        if(k&&k.indexOf('lp_')===0) p[k.slice(3)]=sessionStorage.getItem(k);
+        if(k&&k.indexOf('lp_')===0) p[k]=sessionStorage.getItem(k);
       }
       return p;
     }
