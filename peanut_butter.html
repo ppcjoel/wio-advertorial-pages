@@ -45,6 +45,8 @@ window.__landerConfig = {
 
 
 
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The 31-Calorie Peanut Butter Breaking the Internet: Food Science or Science Fiction?</title>
@@ -130,6 +132,7 @@ window.__landerConfig = {
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <!-- PPC-TRACKING-END -->
+
 
 
 
@@ -761,6 +764,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 
 
+
 <!-- PPC-TRACKING-START -->
 <script>
 (function(){
@@ -778,9 +782,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       if(cfg[k])try{sessionStorage.setItem('lp_'+k,cfg[k])}catch(e){}
     });
 
-    /* Helper: collect all lp_ params — keep the lp_ prefix on the
-       outbound URL so Shopify/GA4 can distinguish original ad-click
-       attribution (lp_utm_*) from later touch UTMs. */
+    /* Helper: collect all lp_ params.  The outbound URL carries BOTH
+       the lp_-prefixed original-touch keys (for multi-touch analysis
+       across later re-visits) AND the canonical stripped keys
+       (utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+       gclid, fbclid, ob_click_id, tb_click_id, …) that Shopify, GA4,
+       Meta CAPI, etc. actually recognize.  Without the canonical keys
+       the destination sees only the HTTP referer and classifies every
+       session as "referral / nutritionsciencedaily.com". */
     function getLpParams(){
       var p={};
       for(var i=0;i<sessionStorage.length;i++){
@@ -790,10 +799,28 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       return p;
     }
 
+    /* Keys whose stripped (no lp_ prefix) versions we also emit on
+       the outbound URL so Shopify/GA4/Meta/ad-platforms can attribute
+       the session.  Kept as a whitelist so arbitrary lp_* junk doesn't
+       leak into platform URLs, but utm_* + the major click IDs do. */
+    var CANONICAL_KEYS=['utm_source','utm_medium','utm_campaign',
+      'utm_term','utm_content','utm_id','gclid','gbraid','wbraid',
+      'fbclid','ttclid','msclkid','ob_click_id','obclid','tblci',
+      'tb_click_id','test_id','lander'];
+
     function buildUrl(base){
       var p=getLpParams();
       var u=new URL(base);
-      Object.keys(p).forEach(function(k){u.searchParams.set(k,p[k])});
+      Object.keys(p).forEach(function(k){
+        /* Always carry the lp_-prefixed key through */
+        u.searchParams.set(k,p[k]);
+        /* If it's a canonical tracking key, also set the stripped
+           version so downstream attribution works. */
+        var stripped=k.slice(3);
+        if(CANONICAL_KEYS.indexOf(stripped)!==-1){
+          u.searchParams.set(stripped,p[k]);
+        }
+      });
       return u.toString();
     }
 
